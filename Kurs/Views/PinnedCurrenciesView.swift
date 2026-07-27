@@ -1,158 +1,123 @@
 import SwiftUI
 
-// MARK: - Pinned Currencies View
+// MARK: - Recent Pairs View
 
-struct PinnedCurrenciesView: View {
-    @EnvironmentObject var appState: AppState
-    @State private var isEditing = false
+struct RecentPairsView: View {
+  @EnvironmentObject var appState: AppState
 
-    var body: some View {
-        if appState.pinnedCurrencies.isEmpty {
-            emptyState
-        } else {
-            pinnedList
-        }
+  var body: some View {
+    if appState.recentPairs.isEmpty {
+      emptyState
+    } else {
+      recentList
     }
+  }
 
-    // MARK: - Empty State
+  // MARK: - Empty State
 
-    private var emptyState: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "pin.slash")
-                .font(.system(size: 28))
-                .foregroundColor(.secondary)
-            Text("No pinned currencies")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-            Text("Long-press a currency to pin it")
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
-        .cornerRadius(12)
-        .padding(.horizontal, 16)
+  private var emptyState: some View {
+    VStack(spacing: 8) {
+      Image(systemName: "clock.arrow.circlepath")
+        .font(.system(size: 28))
+        .foregroundColor(.secondary)
+      Text("No recent conversions")
+        .font(.subheadline)
+        .foregroundColor(.secondary)
+      Text("Pairs you convert will show up here")
+        .font(.caption)
+        .foregroundColor(.secondary)
     }
+    .frame(maxWidth: .infinity)
+    .padding(.vertical, 20)
+    .background(Color(uiColor: .secondarySystemGroupedBackground))
+    .cornerRadius(12)
+    .padding(.horizontal, 16)
+  }
 
-    // MARK: - Pinned List
+  // MARK: - Recent List
 
-    private var pinnedList: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text("Pinned")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                Spacer()
-                Button(isEditing ? "Done" : "Edit") {
-                    withAnimation { isEditing.toggle() }
-                }
-                .font(.subheadline)
-                .foregroundColor(.accentColor)
+  private var recentList: some View {
+    VStack(spacing: 0) {
+      HStack {
+        Text("Recent Pairs")
+          .font(.headline)
+          .foregroundColor(.primary)
+        Spacer()
+      }
+      .padding(.horizontal, 16)
+      .padding(.vertical, 8)
+
+      VStack(spacing: 0) {
+        ForEach(Array(appState.recentPairs.enumerated()), id: \.element) { idx, pair in
+          if let from = Currency.byCode[pair.from], let to = Currency.byCode[pair.to] {
+            RecentPairRow(pair: pair, from: from, to: to)
+            if idx < appState.recentPairs.count - 1 {
+              Divider().padding(.leading, 56)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-
-            // List
-            VStack(spacing: 0) {
-                ForEach(Array(appState.pinnedCurrencies.enumerated()), id: \.element) { idx, code in
-                    if let currency = Currency.byCode[code] {
-                        PinnedCurrencyRow(currency: currency, isEditing: isEditing)
-                        if idx < appState.pinnedCurrencies.count - 1 {
-                            Divider().padding(.leading, 56)
-                        }
-                    }
-                }
-            }
-            .background(Color(uiColor: .secondarySystemGroupedBackground))
-            .cornerRadius(12)
-            .padding(.horizontal, 16)
+          }
         }
+      }
+      .background(Color(uiColor: .secondarySystemGroupedBackground))
+      .cornerRadius(12)
+      .padding(.horizontal, 16)
     }
+  }
 }
 
-// MARK: - Pinned Currency Row
+// MARK: - Recent Pair Row
 
-private struct PinnedCurrencyRow: View {
-    @EnvironmentObject var appState: AppState
-    let currency: Currency
-    let isEditing: Bool
+private struct RecentPairRow: View {
+  @EnvironmentObject var appState: AppState
+  let pair: CurrencyPair
+  let from: Currency
+  let to: Currency
 
-    var convertedAmount: Double {
-        appState.pinnedAmount(for: currency.code)
+  private var rate: Double {
+    appState.conversionRate(from: from, to: to)
+  }
+
+  var body: some View {
+    HStack(spacing: 12) {
+      HStack(spacing: 2) {
+        Text(from.flag).font(.system(size: 20))
+        Text(to.flag).font(.system(size: 20))
+      }
+      .frame(width: 46)
+
+      VStack(alignment: .leading, spacing: 2) {
+        Text("\(from.code) → \(to.code)")
+          .font(.system(size: 15, weight: .semibold))
+        Text("\(from.name) → \(to.name)")
+          .font(.caption)
+          .foregroundColor(.secondary)
+          .lineLimit(1)
+      }
+
+      Spacer()
+
+      VStack(alignment: .trailing, spacing: 1) {
+        Text(appState.formatAmount(rate, currency: to))
+          .font(.system(size: 17, weight: .medium, design: .rounded))
+          .foregroundColor(.primary)
+          .lineLimit(1)
+          .minimumScaleFactor(0.6)
+        Text("per 1 \(from.code)")
+          .font(.caption2)
+          .foregroundColor(.secondary)
+      }
     }
-
-    var body: some View {
-        HStack(spacing: 12) {
-            // Edit controls
-            if isEditing {
-                Button(role: .destructive) {
-                    withAnimation {
-                        appState.pinnedCurrencies.removeAll { $0 == currency.code }
-                        appState.saveSettings()
-                    }
-                } label: {
-                    Image(systemName: "minus.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(.red)
-                }
-                .buttonStyle(.plain)
-                .transition(.move(edge: .leading).combined(with: .opacity))
-            }
-
-            // Flag + code
-            Text(currency.flag)
-                .font(.system(size: 26))
-                .frame(width: 36)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(currency.code)
-                    .font(.system(size: 15, weight: .semibold))
-                Text(currency.name)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
-            }
-
-            Spacer()
-
-            // Amount
-            Text(appState.formatAmount(convertedAmount, currency: currency))
-                .font(.system(size: 18, weight: .medium, design: .rounded))
-                .foregroundColor(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-                .contextMenu {
-                    Button {
-                        UIPasteboard.general.string = appState.formatAmount(convertedAmount, currency: currency)
-                        appState.showToast("Copied \(currency.code) amount")
-                    } label: {
-                        Label("Copy", systemImage: "doc.on.doc")
-                    }
-                }
-
-            if isEditing {
-                Image(systemName: "line.3.horizontal")
-                    .foregroundColor(.secondary)
-                    .font(.system(size: 16))
-                    .padding(.leading, 4)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            if !isEditing {
-                // Tap to set as target
-                appState.targetCurrency = currency
-                appState.isSourceActive = true
-                appState.recordRecent(currency.code)
-                appState.saveSettings()
-            }
-        }
-        .onLongPressGesture {
-            appState.togglePin(currency.code)
-        }
+    .padding(.horizontal, 16)
+    .padding(.vertical, 12)
+    .contentShape(Rectangle())
+    .onTapGesture {
+      appState.sourceCurrency = from
+      appState.targetCurrency = to
+      appState.isSourceActive = true
+      appState.recordCurrentPair()
+      appState.saveSettings()
     }
+    .onLongPressGesture {
+      appState.removeRecentPair(pair)
+    }
+  }
 }

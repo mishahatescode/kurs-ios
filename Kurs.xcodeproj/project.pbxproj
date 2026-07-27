@@ -94,7 +94,7 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
-		9D04D45281174CFF893318AD /* root */ = {
+		8EA934A37A734E66A4F94B24 /* root */ = {
 			isa = PBXGroup;
 			children = (
 				4200CF739EDE4A50A97F07A4 /* Kurs */,
@@ -153,7 +153,7 @@
 				en,
 				Base,
 			);
-			mainGroup = 9D04D45281174CFF893318AD /* root */;
+			mainGroup = 8EA934A37A734E66A4F94B24 /* root */;
 			productRefGroup = 5FB7ED1C097B4529A49BC222 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
