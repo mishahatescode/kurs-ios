@@ -147,8 +147,8 @@ struct RateSourceView: View {
             }
           }
 
-          if appState.isOffline {
-            Label("Offline mode – using cached rates", systemImage: "wifi.slash")
+          if let err = appState.loadError {
+            Label(err, systemImage: "wifi.slash")
               .foregroundColor(.orange)
               .font(.caption)
           }

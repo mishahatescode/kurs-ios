@@ -16,10 +16,6 @@ struct ContentView: View {
       CurrencyPickerSheet(pickingForSource: appState.pickingForSource)
         .environmentObject(appState)
     }
-    .sheet(isPresented: $appState.showRateSource) {
-      RateSourceView(appState: appState)
-        .environmentObject(appState)
-    }
     .sheet(isPresented: $appState.showSettings) {
       SettingsView(appState: appState)
         .environmentObject(appState)
@@ -101,33 +97,36 @@ struct ContentView: View {
 
   // MARK: - Rate Line + "Updated Ago" Chip
 
+  /// True only for the very first fetch after launch (no rates loaded yet) —
+  /// distinct from a background/manual refresh, which already has numbers
+  /// on screen and doesn't need as loud a signal.
+  private var isInitialLoad: Bool {
+    appState.isLoading && appState.lastUpdated == nil
+  }
+  private var isStale: Bool { appState.loadError != nil }
+
   private var rateInfoSection: some View {
     VStack(spacing: 9) {
-      // Rate line — plain centered text, taps through to Rate Source.
-      Button {
-        appState.showRateSource = true
-      } label: {
-        if let err = appState.loadError {
-          HStack(spacing: 5) {
-            Image(systemName: "exclamationmark.triangle.fill")
-              .font(.system(size: 12))
-            Text(err)
-              .font(.system(size: 13, weight: .medium))
-          }
-          .foregroundColor(.orange)
+      // Rate line — plain text; Rate Source now lives in Settings instead
+      // of behind this easy-to-miss tap target.
+      if isInitialLoad {
+        HStack(spacing: 6) {
+          ProgressView().scaleEffect(0.75)
+          Text("Fetching latest rates…")
+            .font(.system(size: 13))
+        }
+        .foregroundColor(.secondary)
+      } else {
+        Text(appState.rateInfoString)
+          .font(.system(size: 13))
+          .foregroundColor(.secondary)
           .lineLimit(1)
           .minimumScaleFactor(0.7)
-        } else {
-          Text(appState.rateInfoString)
-            .font(.system(size: 13))
-            .foregroundColor(.secondary)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-        }
       }
-      .buttonStyle(PressableButtonStyle())
 
-      // Refresh chip — "Rates updated 3 min ago", ticks live.
+      // Refresh chip — "Rates updated 3 min ago" (or, when offline/stale,
+      // "Offline · Updated 3 min ago" so the last-known-good time is always
+      // visible alongside the warning), ticks live.
       Button {
         Task { await appState.refreshRates() }
       } label: {
@@ -136,27 +135,30 @@ struct ContentView: View {
             if appState.isLoading {
               ProgressView()
                 .scaleEffect(0.7)
-                .tint(.accentColor)
+                .tint(isStale ? .orange : .accentColor)
             } else {
-              Image(systemName: "arrow.clockwise")
+              Image(systemName: isStale ? "wifi.slash" : "arrow.clockwise")
                 .font(.system(size: 12, weight: .semibold))
             }
-            Text(
-              appState.isLoading
-                ? "Updating…" : "Rates updated \(appState.updatedAgoText(now: context.date))"
-            )
-            .font(.system(size: 13, weight: .medium))
+            Text(chipText(now: context.date))
+              .font(.system(size: 13, weight: .medium))
           }
         }
-        .foregroundColor(.accentColor)
+        .foregroundColor(isStale ? .orange : .accentColor)
         .padding(.horizontal, 13)
         .frame(minHeight: 32)
-        .background(Color.accentColor.opacity(0.12))
+        .background((isStale ? Color.orange : Color.accentColor).opacity(0.12))
         .clipShape(Capsule())
       }
       .buttonStyle(PressableButtonStyle())
     }
     .padding(.horizontal, 20)
+  }
+
+  private func chipText(now: Date) -> String {
+    if appState.isLoading { return "Updating…" }
+    if isStale { return "Offline · Updated \(appState.updatedAgoText(now: now))" }
+    return "Rates updated \(appState.updatedAgoText(now: now))"
   }
 
   // MARK: - Toast Overlay

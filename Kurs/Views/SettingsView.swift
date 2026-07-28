@@ -10,6 +10,7 @@ struct SettingsView: View {
   // Local copies
   @State private var localDarkMode: Int  // 0=system, 1=light, 2=dark
   @State private var localOffline: Bool
+  @State private var showRateSource = false
 
   init(appState: AppState) {
     let dm = appState.isDarkMode
@@ -50,6 +51,29 @@ struct SettingsView: View {
           }
         } header: {
           Text("Network")
+        }
+
+        // MARK: Rate Source
+        Section {
+          Button {
+            showRateSource = true
+          } label: {
+            HStack {
+              Text("Rate Source")
+                .foregroundColor(.primary)
+              Spacer()
+              Text(appState.rateSource.displayName)
+                .foregroundColor(.secondary)
+              Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(Color(uiColor: .tertiaryLabel))
+            }
+          }
+        } header: {
+          Text("Rate Source")
+        } footer: {
+          Text("Choose ECB, live mid-market, card/bank markup, or a custom fixed rate.")
+            .font(.caption)
         }
 
         // MARK: Rates Info
@@ -120,6 +144,10 @@ struct SettingsView: View {
           }
           .fontWeight(.semibold)
         }
+      }
+      .sheet(isPresented: $showRateSource) {
+        RateSourceView(appState: appState)
+          .environmentObject(appState)
       }
     }
   }

@@ -41,7 +41,6 @@ final class AppState: ObservableObject {
   @Published var isDarkMode: Bool? = nil  // nil = follow system
   @Published var showCurrencyPicker: Bool = false
   @Published var pickingForSource: Bool = true
-  @Published var showRateSource: Bool = false
   @Published var showSettings: Bool = false
   @Published var toastMessage: String? = nil
 
@@ -245,7 +244,13 @@ final class AppState: ObservableObject {
   // MARK: - Rate Refresh
 
   func refreshRates() async {
-    guard !isOffline else { return }
+    guard !isOffline else {
+      // The "Offline Mode" toggle simulates no connectivity without ever
+      // hitting the network — still surface the same stale-rates signal a
+      // real network failure would, so the UI has one code path to render.
+      loadError = "Offline — showing cached rates"
+      return
+    }
     isLoading = true
     loadError = nil
 
@@ -262,9 +267,9 @@ final class AppState: ObservableObject {
         ecbRates = cached.ecb
         liveRates = cached.live
         lastUpdated = cached.date
-        loadError = "Offline – using cached rates"
+        loadError = "No connection — showing cached rates"
       } else {
-        loadError = "Could not load rates – using built-in fallback"
+        loadError = "No connection — using built-in fallback rates"
       }
     }
 
