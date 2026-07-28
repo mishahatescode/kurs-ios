@@ -155,6 +155,21 @@ struct RateSourceView: View {
         } header: {
           Text("Status")
         }
+
+        // MARK: Data Sources
+        Section {
+          InfoRow(label: "ECB Source", value: "api.frankfurter.app")
+          InfoRow(label: "Live Source", value: "open.er-api.com")
+          InfoRow(label: "Refresh", value: "On launch & 15 min interval")
+          InfoRow(label: "Currencies", value: "\(Currency.all.count) supported")
+        } header: {
+          Text("Data Sources")
+        } footer: {
+          Text(
+            "All \(Currency.all.count) currencies are available under every source above — this is the app's total list, not specific to whichever source is selected."
+          )
+          .font(.caption)
+        }
       }
       .navigationTitle("Rate Source")
       .navigationBarTitleDisplayMode(.inline)
@@ -176,6 +191,25 @@ struct RateSourceView: View {
       .onTapGesture {
         customRateFocused = false
       }
+    }
+  }
+}
+
+// MARK: - Info Row
+
+private struct InfoRow: View {
+  let label: String
+  let value: String
+
+  var body: some View {
+    HStack {
+      Text(label)
+        .foregroundColor(.secondary)
+      Spacer()
+      Text(value)
+        .foregroundColor(.primary)
+        .font(.system(size: 14))
+        .multilineTextAlignment(.trailing)
     }
   }
 }

@@ -9,6 +9,22 @@ struct CurrencyPair: Codable, Hashable {
   let to: String
 }
 
+// MARK: - Number Locale
+
+/// The number-formatting locale (grouping/decimal separators) is chosen
+/// independently of the device locale, matching the original prototype.
+struct NumberLocaleOption: Identifiable, Equatable {
+  let id: String
+  let name: String
+
+  static let all: [NumberLocaleOption] = [
+    NumberLocaleOption(id: "en-US", name: "United States"),
+    NumberLocaleOption(id: "de-DE", name: "Germany"),
+    NumberLocaleOption(id: "fr-FR", name: "France"),
+    NumberLocaleOption(id: "en-IN", name: "India"),
+  ]
+}
+
 // MARK: - AppState
 
 @MainActor
@@ -36,6 +52,9 @@ final class AppState: ObservableObject {
   @Published var rateSource: RateSource = .live
   @Published var bankMarkup: Double = 2.5  // percent
   @Published var customRate: String = ""  // raw input
+  @Published var numberLocaleID: String = "en-US"
+
+  var numberLocale: Locale { Locale(identifier: numberLocaleID) }
 
   // MARK: - UI State
   @Published var isDarkMode: Bool? = nil  // nil = follow system
@@ -156,7 +175,7 @@ final class AppState: ObservableObject {
     formatter.minimumFractionDigits = currency.decimalPlaces
     formatter.maximumFractionDigits = currency.decimalPlaces
     formatter.usesGroupingSeparator = true
-    formatter.locale = Locale.current
+    formatter.locale = numberLocale
     return formatter.string(from: NSNumber(value: value)) ?? "0"
   }
 
@@ -174,7 +193,7 @@ final class AppState: ObservableObject {
   // MARK: - Keypad Input
 
   func keypadTap(_ key: String) {
-    let decimalSeparator = Locale.current.decimalSeparator ?? "."
+    let decimalSeparator = numberLocale.decimalSeparator ?? "."
     let maxDec = isSourceActive ? sourceCurrency.decimalPlaces : targetCurrency.decimalPlaces
 
     switch key {
@@ -349,6 +368,7 @@ final class AppState: ObservableObject {
     if let src = p.loadRateSource() { rateSource = src }
     bankMarkup = p.loadBankMarkup()
     customRate = p.loadCustomRate()
+    if let loc = p.loadNumberLocale() { numberLocaleID = loc }
     isDarkMode = p.loadDarkMode()
     if let srcCode = p.loadSourceCurrency(), let cur = Currency.byCode[srcCode] {
       sourceCurrency = cur
@@ -362,6 +382,7 @@ final class AppState: ObservableObject {
     persistence.saveRateSource(rateSource)
     persistence.saveBankMarkup(bankMarkup)
     persistence.saveCustomRate(customRate)
+    persistence.saveNumberLocale(numberLocaleID)
     persistence.saveDarkMode(isDarkMode)
     persistence.saveSourceCurrency(sourceCurrency.code)
     persistence.saveTargetCurrency(targetCurrency.code)

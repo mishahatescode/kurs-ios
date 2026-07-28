@@ -86,10 +86,27 @@ struct ConverterView: View {
   }
 
   private func displayInput(_ raw: String, currency: Currency) -> String {
-    // Show the raw input string (with locale decimal) during editing
-    // but replace "." with the locale separator for display
-    let sep = Locale.current.decimalSeparator ?? "."
-    return raw.replacingOccurrences(of: ".", with: sep)
+    // Live-group the integer part as the user types (e.g. "2039774" reads as
+    // "2,039,774"), then reattach whatever's been typed after the decimal
+    // point as-is — grouping digits still being entered would fight the cursor.
+    let locale = appState.numberLocale
+    let sep = locale.decimalSeparator ?? "."
+    guard let dotIndex = raw.firstIndex(of: ".") else {
+      return groupedInteger(raw, locale: locale)
+    }
+    let intPart = String(raw[..<dotIndex])
+    let fracPart = String(raw[raw.index(after: dotIndex)...])
+    return groupedInteger(intPart, locale: locale) + sep + fracPart
+  }
+
+  private func groupedInteger(_ digits: String, locale: Locale) -> String {
+    let formatter = NumberFormatter()
+    formatter.locale = locale
+    formatter.numberStyle = .decimal
+    formatter.usesGroupingSeparator = true
+    formatter.maximumFractionDigits = 0
+    let value = Double(digits) ?? 0
+    return formatter.string(from: NSNumber(value: value)) ?? digits
   }
 }
 

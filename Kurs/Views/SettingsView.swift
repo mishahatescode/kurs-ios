@@ -10,12 +10,14 @@ struct SettingsView: View {
   // Local copies
   @State private var localDarkMode: Int  // 0=system, 1=light, 2=dark
   @State private var localOffline: Bool
+  @State private var localNumberLocaleID: String
   @State private var showRateSource = false
 
   init(appState: AppState) {
     let dm = appState.isDarkMode
     _localDarkMode = State(initialValue: dm == nil ? 0 : (dm! ? 2 : 1))
     _localOffline = State(initialValue: appState.isOffline)
+    _localNumberLocaleID = State(initialValue: appState.numberLocaleID)
   }
 
   var body: some View {
@@ -76,14 +78,39 @@ struct SettingsView: View {
             .font(.caption)
         }
 
-        // MARK: Rates Info
+        // MARK: Formatting
         Section {
-          RateInfoRow(label: "ECB Source", value: "api.frankfurter.app")
-          RateInfoRow(label: "Live Source", value: "open.er-api.com")
-          RateInfoRow(label: "Refresh", value: "On launch & 15 min interval")
-          RateInfoRow(label: "Currencies", value: "\(Currency.all.count) supported")
+          ForEach(NumberLocaleOption.all) { option in
+            Button {
+              withAnimation { localNumberLocaleID = option.id }
+            } label: {
+              HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                  Text(option.name)
+                    .foregroundColor(.primary)
+                  Text(Self.sampleFormat(for: option.id))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .monospacedDigit()
+                }
+                Spacer()
+                if localNumberLocaleID == option.id {
+                  Image(systemName: "checkmark")
+                    .foregroundColor(.accentColor)
+                    .font(.system(size: 14, weight: .semibold))
+                }
+              }
+              .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+          }
         } header: {
-          Text("Exchange Rates")
+          Text("Formatting")
+        } footer: {
+          Text(
+            "Controls how amounts are grouped and separated — independent of your device's language."
+          )
+          .font(.caption)
         }
 
         // MARK: About
@@ -139,6 +166,7 @@ struct SettingsView: View {
             default: appState.isDarkMode = nil
             }
             appState.isOffline = localOffline
+            appState.numberLocaleID = localNumberLocaleID
             appState.saveSettings()
             dismiss()
           }
@@ -150,6 +178,15 @@ struct SettingsView: View {
           .environmentObject(appState)
       }
     }
+  }
+
+  private static func sampleFormat(for localeID: String) -> String {
+    let formatter = NumberFormatter()
+    formatter.locale = Locale(identifier: localeID)
+    formatter.numberStyle = .decimal
+    formatter.minimumFractionDigits = 2
+    formatter.maximumFractionDigits = 2
+    return formatter.string(from: NSNumber(value: 1_234_567.89)) ?? ""
   }
 }
 

@@ -16,6 +16,7 @@ final class PersistenceService {
     static let rateSource = "kurs.rateSource"
     static let bankMarkup = "kurs.bankMarkup"
     static let customRate = "kurs.customRate"
+    static let numberLocale = "kurs.numberLocale"
     static let darkMode = "kurs.darkMode"
     static let darkModeSet = "kurs.darkModeSet"
     static let sourceCurrency = "kurs.sourceCurrency"
@@ -105,6 +106,16 @@ final class PersistenceService {
 
   func loadCustomRate() -> String {
     defaults.string(forKey: Key.customRate) ?? ""
+  }
+
+  // MARK: - Number Locale
+
+  func saveNumberLocale(_ id: String) {
+    defaults.set(id, forKey: Key.numberLocale)
+  }
+
+  func loadNumberLocale() -> String? {
+    defaults.string(forKey: Key.numberLocale)
   }
 
   // MARK: - Dark Mode
