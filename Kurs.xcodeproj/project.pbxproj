@@ -18,6 +18,7 @@
 		CFD8D73B12BC4910A716FC38 /* NumericKeypad.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DBD80F0ED0D4261A7A5B19A /* NumericKeypad.swift */; };
 		672E5F25E89F4FA4A02D30CF /* PinnedCurrenciesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4D5C5FAF3964FBAA07F9A2C /* PinnedCurrenciesView.swift */; };
 		F01F362A2BED4F498904F5A6 /* RateSourceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70B55740911B4AFB95D3977B /* RateSourceView.swift */; };
+		B37925C4A7A34C0BAE2E979D /* DataSourcesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A047DF1CFD3345E69A9FBA6D /* DataSourcesView.swift */; };
 		E92FBBD3AAB449D4B2FB2E18 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E3831E40C0C411AAF145489 /* SettingsView.swift */; };
 		48474ED40DE44EBBAB11EB5B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 43154FC34DDB4CC19888B68B /* Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -34,6 +35,7 @@
 		2DBD80F0ED0D4261A7A5B19A /* NumericKeypad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumericKeypad.swift; sourceTree = "<group>"; };
 		E4D5C5FAF3964FBAA07F9A2C /* PinnedCurrenciesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedCurrenciesView.swift; sourceTree = "<group>"; };
 		70B55740911B4AFB95D3977B /* RateSourceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RateSourceView.swift; sourceTree = "<group>"; };
+		A047DF1CFD3345E69A9FBA6D /* DataSourcesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSourcesView.swift; sourceTree = "<group>"; };
 		7E3831E40C0C411AAF145489 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		43154FC34DDB4CC19888B68B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		676E215D627246F4BF93D23B /* Kurs.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Kurs.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -89,6 +91,7 @@
 				2DBD80F0ED0D4261A7A5B19A /* NumericKeypad.swift */,
 				E4D5C5FAF3964FBAA07F9A2C /* PinnedCurrenciesView.swift */,
 				70B55740911B4AFB95D3977B /* RateSourceView.swift */,
+				A047DF1CFD3345E69A9FBA6D /* DataSourcesView.swift */,
 				7E3831E40C0C411AAF145489 /* SettingsView.swift */,
 			);
 			path = Views;
@@ -190,6 +193,7 @@
 				CFD8D73B12BC4910A716FC38 /* NumericKeypad.swift in Sources */,
 				672E5F25E89F4FA4A02D30CF /* PinnedCurrenciesView.swift in Sources */,
 				F01F362A2BED4F498904F5A6 /* RateSourceView.swift in Sources */,
+				B37925C4A7A34C0BAE2E979D /* DataSourcesView.swift in Sources */,
 				E92FBBD3AAB449D4B2FB2E18 /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

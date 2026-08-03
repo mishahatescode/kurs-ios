@@ -8,6 +8,7 @@ struct RateSourceView: View {
   @State private var localMarkup: Double
   @State private var localCustomRate: String
   @State private var localSource: RateSource
+  @State private var showDataSources = false
 
   @FocusState private var customRateFocused: Bool
 
@@ -134,41 +135,30 @@ struct RateSourceView: View {
           }
         }
 
-        // MARK: Rate Info
-        Section {
-          if let last = appState.lastUpdated {
-            HStack {
-              Text("Last updated")
-                .foregroundColor(.secondary)
-              Spacer()
-              Text(last, style: .relative)
-                .foregroundColor(.primary)
-                .font(.system(size: 14))
-            }
-          }
-
-          if let err = appState.loadError {
-            Label(err, systemImage: "wifi.slash")
-              .foregroundColor(.orange)
-              .font(.caption)
-          }
-        } header: {
-          Text("Status")
-        }
-
         // MARK: Data Sources
         Section {
-          InfoRow(label: "ECB Source", value: "api.frankfurter.app")
-          InfoRow(label: "Live Source", value: "open.er-api.com")
-          InfoRow(label: "Refresh", value: "On launch & 15 min interval")
-          InfoRow(label: "Currencies", value: "\(Currency.all.count) supported")
-        } header: {
-          Text("Data Sources")
+          Button {
+            showDataSources = true
+          } label: {
+            HStack {
+              Text("Data Sources")
+                .foregroundColor(.primary)
+              Spacer()
+              Text(
+                appState.ecbProvider.displayName + " · " + appState.midMarketProvider.displayName
+              )
+              .foregroundColor(.secondary)
+              .lineLimit(1)
+              Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(Color(uiColor: .tertiaryLabel))
+            }
+            .contentShape(Rectangle())
+          }
+          .buttonStyle(.plain)
         } footer: {
-          Text(
-            "All \(Currency.all.count) currencies are available under every source above — this is the app's total list, not specific to whichever source is selected."
-          )
-          .font(.caption)
+          Text("Choose which feed powers ECB and Mid-market rates, and how often they refresh.")
+            .font(.caption)
         }
       }
       .navigationTitle("Rate Source")
@@ -191,25 +181,10 @@ struct RateSourceView: View {
       .onTapGesture {
         customRateFocused = false
       }
-    }
-  }
-}
-
-// MARK: - Info Row
-
-private struct InfoRow: View {
-  let label: String
-  let value: String
-
-  var body: some View {
-    HStack {
-      Text(label)
-        .foregroundColor(.secondary)
-      Spacer()
-      Text(value)
-        .foregroundColor(.primary)
-        .font(.system(size: 14))
-        .multilineTextAlignment(.trailing)
+      .sheet(isPresented: $showDataSources) {
+        DataSourcesView(appState: appState)
+          .environmentObject(appState)
+      }
     }
   }
 }

@@ -38,10 +38,10 @@ enum RateSource: String, Codable, CaseIterable {
 
   var description: String {
     switch self {
-    case .ecb: return "European Central Bank reference rates"
-    case .live: return "Live mid-market rates"
-    case .card: return "Card or bank rate with markup"
-    case .custom: return "Your custom fixed rate"
+    case .ecb: return "Europe's official rate — set once a day, not every second"
+    case .live: return "The real rate right now — no extra fees added"
+    case .card: return "Like paying with a card abroad — a small fee added on top"
+    case .custom: return "A number you type in yourself, like a rate someone told you"
     }
   }
 

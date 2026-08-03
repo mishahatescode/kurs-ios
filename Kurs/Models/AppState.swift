@@ -56,6 +56,26 @@ final class AppState: ObservableObject {
 
   var numberLocale: Locale { Locale(identifier: numberLocaleID) }
 
+  // MARK: - Data Sources
+
+  @Published var ecbProviderID: String = RateProvider.frankfurter.rawValue
+  @Published var midMarketProviderID: String = RateProvider.openERAPI.rawValue
+  /// Minutes since `lastUpdated` before reopening the app triggers a refresh.
+  /// 0 means "manual only" — never auto-refresh on becoming active.
+  @Published var refreshIntervalMinutes: Int = 15
+
+  var ecbProvider: RateProvider { RateProvider(rawValue: ecbProviderID) ?? .frankfurter }
+  var midMarketProvider: RateProvider { RateProvider(rawValue: midMarketProviderID) ?? .openERAPI }
+
+  /// How many of the app's currencies actually came back in a given rates
+  /// dictionary — real, source-dependent coverage rather than the app's
+  /// fixed total (ECB, for instance, covers far fewer currencies than a
+  /// broad market aggregator does).
+  func supportedCurrencyCount(in rates: [String: Double]) -> Int? {
+    guard !rates.isEmpty else { return nil }
+    return Currency.all.filter { rates[$0.code] != nil }.count
+  }
+
   // MARK: - UI State
   @Published var isDarkMode: Bool? = nil  // nil = follow system
   @Published var showCurrencyPicker: Bool = false
@@ -274,7 +294,10 @@ final class AppState: ObservableObject {
     loadError = nil
 
     do {
-      let (ecb, live) = try await exchangeService.fetchBothRates()
+      let (ecb, live) = try await exchangeService.fetchBothRates(
+        ecbProvider: ecbProvider,
+        midMarketProvider: midMarketProvider
+      )
       ecbRates = ecb
       liveRates = live
       lastUpdated = Date()
@@ -296,11 +319,12 @@ final class AppState: ObservableObject {
   }
 
   func refreshIfStale() async {
+    guard refreshIntervalMinutes > 0 else { return }  // "Manual only"
     guard let last = lastUpdated else {
       await refreshRates()
       return
     }
-    if Date().timeIntervalSince(last) > 15 * 60 {
+    if Date().timeIntervalSince(last) > Double(refreshIntervalMinutes) * 60 {
       await refreshRates()
     }
   }
@@ -369,6 +393,9 @@ final class AppState: ObservableObject {
     bankMarkup = p.loadBankMarkup()
     customRate = p.loadCustomRate()
     if let loc = p.loadNumberLocale() { numberLocaleID = loc }
+    if let ecbID = p.loadEcbProvider() { ecbProviderID = ecbID }
+    if let midID = p.loadMidMarketProvider() { midMarketProviderID = midID }
+    refreshIntervalMinutes = p.loadRefreshInterval()
     isDarkMode = p.loadDarkMode()
     if let srcCode = p.loadSourceCurrency(), let cur = Currency.byCode[srcCode] {
       sourceCurrency = cur
@@ -383,6 +410,9 @@ final class AppState: ObservableObject {
     persistence.saveBankMarkup(bankMarkup)
     persistence.saveCustomRate(customRate)
     persistence.saveNumberLocale(numberLocaleID)
+    persistence.saveEcbProvider(ecbProviderID)
+    persistence.saveMidMarketProvider(midMarketProviderID)
+    persistence.saveRefreshInterval(refreshIntervalMinutes)
     persistence.saveDarkMode(isDarkMode)
     persistence.saveSourceCurrency(sourceCurrency.code)
     persistence.saveTargetCurrency(targetCurrency.code)

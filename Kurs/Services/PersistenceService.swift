@@ -17,6 +17,9 @@ final class PersistenceService {
     static let bankMarkup = "kurs.bankMarkup"
     static let customRate = "kurs.customRate"
     static let numberLocale = "kurs.numberLocale"
+    static let ecbProvider = "kurs.ecbProvider"
+    static let midMarketProvider = "kurs.midMarketProvider"
+    static let refreshInterval = "kurs.refreshInterval"
     static let darkMode = "kurs.darkMode"
     static let darkModeSet = "kurs.darkModeSet"
     static let sourceCurrency = "kurs.sourceCurrency"
@@ -116,6 +119,34 @@ final class PersistenceService {
 
   func loadNumberLocale() -> String? {
     defaults.string(forKey: Key.numberLocale)
+  }
+
+  // MARK: - Data Sources
+
+  func saveEcbProvider(_ id: String) {
+    defaults.set(id, forKey: Key.ecbProvider)
+  }
+
+  func loadEcbProvider() -> String? {
+    defaults.string(forKey: Key.ecbProvider)
+  }
+
+  func saveMidMarketProvider(_ id: String) {
+    defaults.set(id, forKey: Key.midMarketProvider)
+  }
+
+  func loadMidMarketProvider() -> String? {
+    defaults.string(forKey: Key.midMarketProvider)
+  }
+
+  func saveRefreshInterval(_ minutes: Int) {
+    defaults.set(minutes, forKey: Key.refreshInterval)
+  }
+
+  /// Defaults to 15 (matching the app's historical behavior) until the
+  /// user explicitly saves a choice via Settings.
+  func loadRefreshInterval() -> Int {
+    defaults.object(forKey: Key.refreshInterval) as? Int ?? 15
   }
 
   // MARK: - Dark Mode
