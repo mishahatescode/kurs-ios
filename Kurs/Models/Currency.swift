@@ -21,25 +21,28 @@ struct Currency: Identifiable, Codable, Equatable, Hashable {
 
 // MARK: - Rate Source
 
+/// How the displayed rate is derived from whichever data source is selected.
+///
+/// Note there is deliberately no separate "ECB" case here: being an ECB rate
+/// is a property of the *feed* you pull from (Frankfurter publishes the ECB's
+/// numbers), not of a calculation applied afterwards. Picking the feed lives
+/// in Data Sources; this enum only covers what we do to those numbers.
 enum RateSource: String, Codable, CaseIterable {
-  case ecb = "ECB"
-  case live = "Live"
+  case market = "Market"
   case card = "Card/Bank"
   case custom = "Custom"
 
   var displayName: String {
     switch self {
-    case .ecb: return "ECB"
-    case .live: return "Mid-market"
-    case .card: return "Card/Bank"
+    case .market: return "Market rate"
+    case .card: return "Card or bank"
     case .custom: return "Custom"
     }
   }
 
   var description: String {
     switch self {
-    case .ecb: return "Europe's official rate — set once a day, not every second"
-    case .live: return "The real rate right now — no extra fees added"
+    case .market: return "The plain rate from your data source — nothing added"
     case .card: return "Like paying with a card abroad — a small fee added on top"
     case .custom: return "A number you type in yourself, like a rate someone told you"
     }
@@ -47,8 +50,7 @@ enum RateSource: String, Codable, CaseIterable {
 
   var sfSymbol: String {
     switch self {
-    case .ecb: return "building.columns"
-    case .live: return "chart.line.uptrend.xyaxis"
+    case .market: return "chart.line.uptrend.xyaxis"
     case .card: return "creditcard"
     case .custom: return "pencil"
     }

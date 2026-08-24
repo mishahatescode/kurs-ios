@@ -37,19 +37,19 @@ final class AppState: ObservableObject {
   @Published var isSourceActive: Bool = true  // which side the keypad edits
 
   // MARK: - Currency Lists
+  @Published var pinnedCurrencies: [String] = []  // codes, always shown first in the picker
   @Published var recentPairs: [CurrencyPair] = []  // most recent first, max 10
   @Published var recentCurrencies: [String] = []  // codes, max 8 — used by the currency picker's "Recent" section
 
   // MARK: - Rate Data
-  @Published var ecbRates: [String: Double] = [:]
-  @Published var liveRates: [String: Double] = [:]
+  @Published var rates: [String: Double] = [:]
   @Published var isLoading: Bool = false
   @Published var lastUpdated: Date? = nil
   @Published var loadError: String? = nil
   @Published var isOffline: Bool = false
 
   // MARK: - Rate Source & Settings
-  @Published var rateSource: RateSource = .live
+  @Published var rateSource: RateSource = .market
   @Published var bankMarkup: Double = 2.5  // percent
   @Published var customRate: String = ""  // raw input
   @Published var numberLocaleID: String = "en-US"
@@ -58,20 +58,15 @@ final class AppState: ObservableObject {
 
   // MARK: - Data Sources
 
-  @Published var ecbProviderID: String = RateProvider.frankfurter.rawValue
-  @Published var midMarketProviderID: String = RateProvider.openERAPI.rawValue
-  /// Minutes since `lastUpdated` before reopening the app triggers a refresh.
-  /// 0 means "manual only" — never auto-refresh on becoming active.
-  @Published var refreshIntervalMinutes: Int = 15
+  /// One feed powers every rate in the app.
+  @Published var providerID: String = RateProvider.openERAPI.rawValue
 
-  var ecbProvider: RateProvider { RateProvider(rawValue: ecbProviderID) ?? .frankfurter }
-  var midMarketProvider: RateProvider { RateProvider(rawValue: midMarketProviderID) ?? .openERAPI }
+  var provider: RateProvider { RateProvider(rawValue: providerID) ?? .openERAPI }
 
-  /// How many of the app's currencies actually came back in a given rates
-  /// dictionary — real, source-dependent coverage rather than the app's
-  /// fixed total (ECB, for instance, covers far fewer currencies than a
-  /// broad market aggregator does).
-  func supportedCurrencyCount(in rates: [String: Double]) -> Int? {
+  /// How many of the app's currencies actually came back in the last fetch —
+  /// real, source-dependent coverage rather than the app's fixed total (the
+  /// ECB, for instance, covers far fewer currencies than a broad aggregator).
+  var supportedCurrencyCount: Int? {
     guard !rates.isEmpty else { return nil }
     return Currency.all.filter { rates[$0.code] != nil }.count
   }
@@ -104,18 +99,7 @@ final class AppState: ObservableObject {
   }
 
   var effectiveRates: [String: Double] {
-    switch rateSource {
-    case .ecb:
-      return ecbRates.isEmpty ? Currency.seedRates : mergedWithSeeds(ecbRates)
-    case .live, .card:
-      return liveRates.isEmpty
-        ? (ecbRates.isEmpty ? Currency.seedRates : mergedWithSeeds(ecbRates))
-        : mergedWithSeeds(liveRates)
-    case .custom:
-      return liveRates.isEmpty
-        ? (ecbRates.isEmpty ? Currency.seedRates : mergedWithSeeds(ecbRates))
-        : mergedWithSeeds(liveRates)
-    }
+    rates.isEmpty ? Currency.seedRates : mergedWithSeeds(rates)
   }
 
   private func mergedWithSeeds(_ rates: [String: Double]) -> [String: Double] {
@@ -136,7 +120,7 @@ final class AppState: ObservableObject {
     let base = toRate / fromRate
 
     switch rateSource {
-    case .ecb, .live:
+    case .market:
       return base
     case .card:
       // The markup must cost the customer money regardless of which way
@@ -169,9 +153,12 @@ final class AppState: ObservableObject {
   var rateInfoString: String {
     let rate = conversionRate(from: sourceCurrency, to: targetCurrency)
     let formattedRate = formatAmount(rate, currency: targetCurrency)
-    let sourceLabel =
-      rateSource == .ecb
-      ? "ECB" : rateSource == .live ? "Live" : rateSource == .card ? "Bank" : "Custom"
+    let sourceLabel: String
+    switch rateSource {
+    case .market: sourceLabel = provider.displayName
+    case .card: sourceLabel = "Card or bank"
+    case .custom: sourceLabel = "Custom"
+    }
     return "1 \(sourceCurrency.code) = \(formattedRate) \(targetCurrency.code) · \(sourceLabel)"
   }
 
@@ -294,20 +281,15 @@ final class AppState: ObservableObject {
     loadError = nil
 
     do {
-      let (ecb, live) = try await exchangeService.fetchBothRates(
-        ecbProvider: ecbProvider,
-        midMarketProvider: midMarketProvider
-      )
-      ecbRates = ecb
-      liveRates = live
+      let fetched = try await exchangeService.fetchRates(from: provider)
+      rates = fetched
       lastUpdated = Date()
       loadError = nil
-      persistence.saveRates(ecb: ecb, live: live, date: lastUpdated!)
+      persistence.saveRates(fetched, date: lastUpdated!)
     } catch {
       // Try to load cached
       if let cached = persistence.loadCachedRates() {
-        ecbRates = cached.ecb
-        liveRates = cached.live
+        rates = cached.rates
         lastUpdated = cached.date
         loadError = "No connection — showing cached rates"
       } else {
@@ -318,15 +300,22 @@ final class AppState: ObservableObject {
     isLoading = false
   }
 
-  func refreshIfStale() async {
-    guard refreshIntervalMinutes > 0 else { return }  // "Manual only"
-    guard let last = lastUpdated else {
-      await refreshRates()
-      return
+  // MARK: - Pinned Currencies
+
+  func isPinned(_ code: String) -> Bool { pinnedCurrencies.contains(code) }
+
+  func togglePin(_ code: String) {
+    if pinnedCurrencies.contains(code) {
+      pinnedCurrencies.removeAll { $0 == code }
+    } else {
+      pinnedCurrencies.append(code)
     }
-    if Date().timeIntervalSince(last) > Double(refreshIntervalMinutes) * 60 {
-      await refreshRates()
-    }
+    persistence.savePinned(pinnedCurrencies)
+  }
+
+  func clearPinnedCurrencies() {
+    pinnedCurrencies = []
+    persistence.savePinned([])
   }
 
   // MARK: - Recent Pairs
@@ -334,6 +323,9 @@ final class AppState: ObservableObject {
   /// Records the currently active source→target pair at the front of the
   /// recent-pairs list (moving it there if it's already present), capped at 10.
   func recordCurrentPair() {
+    // A same-currency pair is always 1:1 and tells the user nothing — it can
+    // happen by picking the currency that's already on the other side.
+    guard sourceCurrency.code != targetCurrency.code else { return }
     let pair = CurrencyPair(from: sourceCurrency.code, to: targetCurrency.code)
     recentPairs.removeAll { $0 == pair }
     recentPairs.insert(pair, at: 0)
@@ -382,20 +374,18 @@ final class AppState: ObservableObject {
 
   private func loadPersistedState() {
     let p = persistence
+    pinnedCurrencies = p.loadPinned() ?? []
     recentPairs = p.loadRecentPairs()
     if let recents = p.loadRecents() { recentCurrencies = recents }
     if let cached = p.loadCachedRates() {
-      ecbRates = cached.ecb
-      liveRates = cached.live
+      rates = cached.rates
       lastUpdated = cached.date
     }
     if let src = p.loadRateSource() { rateSource = src }
     bankMarkup = p.loadBankMarkup()
     customRate = p.loadCustomRate()
     if let loc = p.loadNumberLocale() { numberLocaleID = loc }
-    if let ecbID = p.loadEcbProvider() { ecbProviderID = ecbID }
-    if let midID = p.loadMidMarketProvider() { midMarketProviderID = midID }
-    refreshIntervalMinutes = p.loadRefreshInterval()
+    if let pID = p.loadProvider() { providerID = pID }
     isDarkMode = p.loadDarkMode()
     if let srcCode = p.loadSourceCurrency(), let cur = Currency.byCode[srcCode] {
       sourceCurrency = cur
@@ -410,9 +400,7 @@ final class AppState: ObservableObject {
     persistence.saveBankMarkup(bankMarkup)
     persistence.saveCustomRate(customRate)
     persistence.saveNumberLocale(numberLocaleID)
-    persistence.saveEcbProvider(ecbProviderID)
-    persistence.saveMidMarketProvider(midMarketProviderID)
-    persistence.saveRefreshInterval(refreshIntervalMinutes)
+    persistence.saveProvider(providerID)
     persistence.saveDarkMode(isDarkMode)
     persistence.saveSourceCurrency(sourceCurrency.code)
     persistence.saveTargetCurrency(targetCurrency.code)

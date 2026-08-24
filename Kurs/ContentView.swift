@@ -4,7 +4,6 @@ import SwiftUI
 
 struct ContentView: View {
   @EnvironmentObject var appState: AppState
-  @Environment(\.scenePhase) private var scenePhase
 
   var body: some View {
     ZStack(alignment: .bottom) {
@@ -19,11 +18,6 @@ struct ContentView: View {
     .sheet(isPresented: $appState.showSettings) {
       SettingsView(appState: appState)
         .environmentObject(appState)
-    }
-    .onChange(of: scenePhase) { newPhase in
-      if newPhase == .active {
-        Task { await appState.refreshIfStale() }
-      }
     }
   }
 

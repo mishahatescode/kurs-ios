@@ -1,83 +1,39 @@
 import SwiftUI
 
-// MARK: - Data Sources Sheet
+// MARK: - Data Source Sheet
 
+/// One feed powers every rate in the app. The three options differ in who
+/// publishes the numbers, how often, and how many currencies they cover —
+/// so each is described in plain language rather than by its API hostname.
 struct DataSourcesView: View {
   @EnvironmentObject var appState: AppState
   @Environment(\.dismiss) private var dismiss
 
-  @State private var localEcbProviderID: String
-  @State private var localMidMarketProviderID: String
-  @State private var localRefreshMinutes: Int
+  @State private var localProviderID: String
 
   init(appState: AppState) {
-    _localEcbProviderID = State(initialValue: appState.ecbProviderID)
-    _localMidMarketProviderID = State(initialValue: appState.midMarketProviderID)
-    _localRefreshMinutes = State(initialValue: appState.refreshIntervalMinutes)
+    _localProviderID = State(initialValue: appState.providerID)
   }
-
-  private static let refreshOptions: [(minutes: Int, label: String)] = [
-    (5, "Every 5 minutes"),
-    (15, "Every 15 minutes"),
-    (30, "Every 30 minutes"),
-    (60, "Every hour"),
-    (0, "Manual only"),
-  ]
 
   var body: some View {
     NavigationStack {
       Form {
-        // MARK: ECB Source
         Section {
           ForEach(RateProvider.allCases) { provider in
-            providerRow(provider, isSelected: localEcbProviderID == provider.rawValue) {
-              localEcbProviderID = provider.rawValue
-            }
-          }
-        } header: {
-          Text("ECB Source")
-        } footer: {
-          Text(
-            countFooter(
-              rates: appState.ecbRates,
-              activeID: appState.ecbProviderID,
-              localID: localEcbProviderID
-            )
-          )
-          .font(.caption)
-        }
-
-        // MARK: Mid-market Source
-        Section {
-          ForEach(RateProvider.allCases) { provider in
-            providerRow(provider, isSelected: localMidMarketProviderID == provider.rawValue) {
-              localMidMarketProviderID = provider.rawValue
-            }
-          }
-        } header: {
-          Text("Mid-market Source")
-        } footer: {
-          Text(
-            countFooter(
-              rates: appState.liveRates,
-              activeID: appState.midMarketProviderID,
-              localID: localMidMarketProviderID
-            )
-          )
-          .font(.caption)
-        }
-
-        // MARK: Refresh
-        Section {
-          ForEach(Self.refreshOptions, id: \.minutes) { option in
             Button {
-              localRefreshMinutes = option.minutes
+              localProviderID = provider.rawValue
             } label: {
-              HStack {
-                Text(option.label)
-                  .foregroundColor(.primary)
-                Spacer()
-                if localRefreshMinutes == option.minutes {
+              HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                  Text(provider.displayName)
+                    .foregroundColor(.primary)
+                  Text(provider.summary)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                if localProviderID == provider.rawValue {
                   Image(systemName: "checkmark")
                     .foregroundColor(.accentColor)
                     .font(.system(size: 14, weight: .semibold))
@@ -88,15 +44,13 @@ struct DataSourcesView: View {
             .buttonStyle(.plain)
           }
         } header: {
-          Text("Refresh")
+          Text("Where rates come from")
         } footer: {
-          Text(
-            "Rates always refresh on launch. Reopening the app after this much time has passed refreshes them again automatically."
-          )
-          .font(.caption)
+          Text(coverageFooter)
+            .font(.caption)
         }
       }
-      .navigationTitle("Data Sources")
+      .navigationTitle("Data Source")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
@@ -104,14 +58,10 @@ struct DataSourcesView: View {
         }
         ToolbarItem(placement: .navigationBarTrailing) {
           Button("Apply") {
-            let providersChanged =
-              localEcbProviderID != appState.ecbProviderID
-              || localMidMarketProviderID != appState.midMarketProviderID
-            appState.ecbProviderID = localEcbProviderID
-            appState.midMarketProviderID = localMidMarketProviderID
-            appState.refreshIntervalMinutes = localRefreshMinutes
+            let changed = localProviderID != appState.providerID
+            appState.providerID = localProviderID
             appState.saveSettings()
-            if providersChanged {
+            if changed {
               Task { await appState.refreshRates() }
             }
             dismiss()
@@ -122,37 +72,11 @@ struct DataSourcesView: View {
     }
   }
 
-  private func providerRow(
-    _ provider: RateProvider,
-    isSelected: Bool,
-    action: @escaping () -> Void
-  ) -> some View {
-    Button(action: action) {
-      HStack {
-        VStack(alignment: .leading, spacing: 2) {
-          Text(provider.displayName)
-            .foregroundColor(.primary)
-          Text(provider.host)
-            .font(.caption)
-            .foregroundColor(.secondary)
-        }
-        Spacer()
-        if isSelected {
-          Image(systemName: "checkmark")
-            .foregroundColor(.accentColor)
-            .font(.system(size: 14, weight: .semibold))
-        }
-      }
-      .contentShape(Rectangle())
+  private var coverageFooter: String {
+    guard localProviderID == appState.providerID else {
+      return "Tap Apply to switch — rates and currency coverage refresh right after."
     }
-    .buttonStyle(.plain)
-  }
-
-  private func countFooter(rates: [String: Double], activeID: String, localID: String) -> String {
-    guard activeID == localID else {
-      return "Tap Apply to switch — currency coverage will refresh right after."
-    }
-    guard let count = appState.supportedCurrencyCount(in: rates) else {
+    guard let count = appState.supportedCurrencyCount else {
       return "Coverage will show here after the first successful refresh."
     }
     return "\(count) of \(Currency.all.count) currencies available from this source."

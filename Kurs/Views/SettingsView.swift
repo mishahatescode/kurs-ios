@@ -74,7 +74,7 @@ struct SettingsView: View {
         } header: {
           Text("Rate Source")
         } footer: {
-          Text("Choose ECB, live mid-market, card/bank markup, or a custom fixed rate.")
+          Text("Choose the plain market rate, a card/bank fee, or your own fixed rate.")
             .font(.caption)
         }
 
@@ -117,24 +117,6 @@ struct SettingsView: View {
         Section {
           RateInfoRow(label: "Version", value: "1.0.0")
           RateInfoRow(label: "Bundle", value: "com.onedollarapps.kurs")
-          Link(destination: URL(string: "https://frankfurter.app")!) {
-            HStack {
-              Text("Frankfurter API")
-                .foregroundColor(.primary)
-              Spacer()
-              Image(systemName: "arrow.up.right.square")
-                .foregroundColor(.accentColor)
-            }
-          }
-          Link(destination: URL(string: "https://open.er-api.com")!) {
-            HStack {
-              Text("Open ER API")
-                .foregroundColor(.primary)
-              Spacer()
-              Image(systemName: "arrow.up.right.square")
-                .foregroundColor(.accentColor)
-            }
-          }
         } header: {
           Text("About")
         }

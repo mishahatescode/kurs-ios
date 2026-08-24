@@ -8,22 +8,30 @@ final class PersistenceService {
 
   // MARK: - Keys
   private enum Key {
+    static let pinnedCurrencies = "kurs.pinnedCurrencies"
     static let recentPairs = "kurs.recentPairs"
     static let recentCurrencies = "kurs.recents"
-    static let cachedECBRates = "kurs.ecbRates"
-    static let cachedLiveRates = "kurs.liveRates"
+    static let cachedRates = "kurs.rates"
     static let cacheDate = "kurs.cacheDate"
     static let rateSource = "kurs.rateSource"
     static let bankMarkup = "kurs.bankMarkup"
     static let customRate = "kurs.customRate"
     static let numberLocale = "kurs.numberLocale"
-    static let ecbProvider = "kurs.ecbProvider"
-    static let midMarketProvider = "kurs.midMarketProvider"
-    static let refreshInterval = "kurs.refreshInterval"
+    static let provider = "kurs.provider"
     static let darkMode = "kurs.darkMode"
     static let darkModeSet = "kurs.darkModeSet"
     static let sourceCurrency = "kurs.sourceCurrency"
     static let targetCurrency = "kurs.targetCurrency"
+  }
+
+  // MARK: - Pinned Currencies
+
+  func savePinned(_ codes: [String]) {
+    defaults.set(codes, forKey: Key.pinnedCurrencies)
+  }
+
+  func loadPinned() -> [String]? {
+    defaults.stringArray(forKey: Key.pinnedCurrencies)
   }
 
   // MARK: - Recent Pairs
@@ -53,30 +61,24 @@ final class PersistenceService {
   // MARK: - Rates Cache
 
   struct CachedRates {
-    let ecb: [String: Double]
-    let live: [String: Double]
+    let rates: [String: Double]
     let date: Date
   }
 
-  func saveRates(ecb: [String: Double], live: [String: Double], date: Date) {
-    if let ecbData = try? JSONEncoder().encode(ecb) {
-      defaults.set(ecbData, forKey: Key.cachedECBRates)
-    }
-    if let liveData = try? JSONEncoder().encode(live) {
-      defaults.set(liveData, forKey: Key.cachedLiveRates)
+  func saveRates(_ rates: [String: Double], date: Date) {
+    if let data = try? JSONEncoder().encode(rates) {
+      defaults.set(data, forKey: Key.cachedRates)
     }
     defaults.set(date, forKey: Key.cacheDate)
   }
 
   func loadCachedRates() -> CachedRates? {
     guard
-      let ecbData = defaults.data(forKey: Key.cachedECBRates),
-      let liveData = defaults.data(forKey: Key.cachedLiveRates),
+      let data = defaults.data(forKey: Key.cachedRates),
       let date = defaults.object(forKey: Key.cacheDate) as? Date,
-      let ecb = try? JSONDecoder().decode([String: Double].self, from: ecbData),
-      let live = try? JSONDecoder().decode([String: Double].self, from: liveData)
+      let rates = try? JSONDecoder().decode([String: Double].self, from: data)
     else { return nil }
-    return CachedRates(ecb: ecb, live: live, date: date)
+    return CachedRates(rates: rates, date: date)
   }
 
   // MARK: - Rate Source
@@ -123,30 +125,12 @@ final class PersistenceService {
 
   // MARK: - Data Sources
 
-  func saveEcbProvider(_ id: String) {
-    defaults.set(id, forKey: Key.ecbProvider)
+  func saveProvider(_ id: String) {
+    defaults.set(id, forKey: Key.provider)
   }
 
-  func loadEcbProvider() -> String? {
-    defaults.string(forKey: Key.ecbProvider)
-  }
-
-  func saveMidMarketProvider(_ id: String) {
-    defaults.set(id, forKey: Key.midMarketProvider)
-  }
-
-  func loadMidMarketProvider() -> String? {
-    defaults.string(forKey: Key.midMarketProvider)
-  }
-
-  func saveRefreshInterval(_ minutes: Int) {
-    defaults.set(minutes, forKey: Key.refreshInterval)
-  }
-
-  /// Defaults to 15 (matching the app's historical behavior) until the
-  /// user explicitly saves a choice via Settings.
-  func loadRefreshInterval() -> Int {
-    defaults.object(forKey: Key.refreshInterval) as? Int ?? 15
+  func loadProvider() -> String? {
+    defaults.string(forKey: Key.provider)
   }
 
   // MARK: - Dark Mode

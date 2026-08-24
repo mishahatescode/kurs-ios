@@ -10,8 +10,16 @@ struct CurrencyPickerSheet: View {
   @State private var searchText: String = ""
   @FocusState private var searchFocused: Bool
 
+  private var pinnedCurrencies: [Currency] {
+    appState.pinnedCurrencies.compactMap { Currency.byCode[$0] }
+  }
+
+  /// Recents minus anything already pinned — a pinned currency is always
+  /// visible at the top, so repeating it just below is noise.
   private var recentCurrencies: [Currency] {
-    appState.recentCurrencies.compactMap { Currency.byCode[$0] }
+    appState.recentCurrencies
+      .filter { !appState.isPinned($0) }
+      .compactMap { Currency.byCode[$0] }
   }
 
   private var filteredCurrencies: [Currency] {
@@ -25,7 +33,14 @@ struct CurrencyPickerSheet: View {
   var body: some View {
     NavigationStack {
       List {
-        // Recents section
+        if searchText.isEmpty && !pinnedCurrencies.isEmpty {
+          Section("Pinned") {
+            ForEach(pinnedCurrencies) { currency in
+              CurrencyPickerRow(currency: currency, onSelect: { select(currency) })
+            }
+          }
+        }
+
         if searchText.isEmpty && !recentCurrencies.isEmpty {
           Section("Recent") {
             ForEach(recentCurrencies) { currency in
@@ -76,30 +91,41 @@ private struct CurrencyPickerRow: View {
   let currency: Currency
   let onSelect: () -> Void
 
+  private var isPinned: Bool { appState.isPinned(currency.code) }
+
   var body: some View {
-    Button(action: onSelect) {
-      HStack(spacing: 12) {
-        Text(currency.flag)
-          .font(.system(size: 26))
-          .frame(width: 36)
+    // The row is a plain HStack rather than a Button so the star can be its
+    // own independently-tappable control inside it; a Button-in-Button
+    // swallows the inner tap.
+    HStack(spacing: 12) {
+      Text(currency.flag)
+        .font(.system(size: 26))
+        .frame(width: 36)
 
-        VStack(alignment: .leading, spacing: 2) {
-          Text(currency.code)
-            .font(.system(size: 15, weight: .semibold))
-            .foregroundColor(.primary)
-          Text(currency.name)
-            .font(.caption)
-            .foregroundColor(.secondary)
-        }
-
-        Spacer()
-
-        Image(systemName: "chevron.right")
+      VStack(alignment: .leading, spacing: 2) {
+        Text(currency.code)
+          .font(.system(size: 15, weight: .semibold))
+          .foregroundColor(.primary)
+        Text(currency.name)
           .font(.caption)
           .foregroundColor(.secondary)
       }
-      .contentShape(Rectangle())
+
+      Spacer()
+
+      Button {
+        withAnimation { appState.togglePin(currency.code) }
+      } label: {
+        Image(systemName: isPinned ? "star.fill" : "star")
+          .font(.system(size: 15))
+          .foregroundColor(isPinned ? .yellow : Color(uiColor: .tertiaryLabel))
+          .frame(width: 44, height: 44)
+          .contentShape(Rectangle())
+      }
+      .buttonStyle(.borderless)
+      .accessibilityLabel(isPinned ? "Unpin \(currency.code)" : "Pin \(currency.code)")
     }
-    .buttonStyle(.plain)
+    .contentShape(Rectangle())
+    .onTapGesture { onSelect() }
   }
 }

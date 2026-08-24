@@ -100,7 +100,7 @@ struct RateSourceView: View {
           } header: {
             Text("Bank/Card Markup")
           } footer: {
-            Text("Applied on top of live mid-market rate. A 2.5% markup is typical for many banks.")
+            Text("Taken off the rate from your data source. 2.5% is typical for many banks.")
               .font(.caption)
           }
         }
@@ -129,7 +129,7 @@ struct RateSourceView: View {
             Text("Custom Rate")
           } footer: {
             Text(
-              "Enter a fixed rate for \(appState.sourceCurrency.code) → \(appState.targetCurrency.code). Leave empty to use live rates."
+              "Enter a fixed rate for \(appState.sourceCurrency.code) → \(appState.targetCurrency.code). Leave empty to use the market rate."
             )
             .font(.caption)
           }
@@ -141,14 +141,12 @@ struct RateSourceView: View {
             showDataSources = true
           } label: {
             HStack {
-              Text("Data Sources")
+              Text("Data Source")
                 .foregroundColor(.primary)
               Spacer()
-              Text(
-                appState.ecbProvider.displayName + " · " + appState.midMarketProvider.displayName
-              )
-              .foregroundColor(.secondary)
-              .lineLimit(1)
+              Text(appState.provider.displayName)
+                .foregroundColor(.secondary)
+                .lineLimit(1)
               Image(systemName: "chevron.right")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(Color(uiColor: .tertiaryLabel))
@@ -157,7 +155,7 @@ struct RateSourceView: View {
           }
           .buttonStyle(.plain)
         } footer: {
-          Text("Choose which feed powers ECB and Mid-market rates, and how often they refresh.")
+          Text("Where every rate in the app comes from.")
             .font(.caption)
         }
       }

@@ -2,9 +2,9 @@ import Foundation
 
 // MARK: - Rate Provider
 
-/// A pluggable rates feed. Both the "ECB Source" and "Mid-market Source"
-/// slots in Settings can be pointed at any of these — they're just
-/// interchangeable "give me a USD-based rates dictionary" backends.
+/// Where every rate in the app comes from. One choice powers everything —
+/// what differs between these is who publishes the numbers, how often, and
+/// how many currencies they cover.
 enum RateProvider: String, Codable, CaseIterable, Identifiable {
   case frankfurter
   case openERAPI
@@ -14,17 +14,23 @@ enum RateProvider: String, Codable, CaseIterable, Identifiable {
 
   var displayName: String {
     switch self {
-    case .frankfurter: return "Frankfurter"
-    case .openERAPI: return "ExchangeRate-API"
-    case .fawazCurrencyAPI: return "Currency-API"
+    case .frankfurter: return "European Central Bank"
+    case .openERAPI: return "Bank average"
+    case .fawazCurrencyAPI: return "Widest coverage"
     }
   }
 
-  var host: String {
+  /// Plain-language explanation of how this feed differs from the others.
+  var summary: String {
     switch self {
-    case .frankfurter: return "api.frankfurter.app"
-    case .openERAPI: return "open.er-api.com"
-    case .fawazCurrencyAPI: return "cdn.jsdelivr.net"
+    case .frankfurter:
+      return
+        "Europe's official rate. Published once each weekday afternoon, so it stays put during the day."
+    case .openERAPI:
+      return
+        "Averaged across many banks and exchanges. Updated daily, and covers more currencies than the ECB."
+    case .fawazCurrencyAPI:
+      return "A free community feed with the longest currency list. Updated daily."
     }
   }
 }
@@ -44,32 +50,11 @@ actor ExchangeRateService {
 
   // MARK: - Public API
 
-  /// Fetches the ECB-slot and Mid-market-slot rates concurrently, using
-  /// whichever provider each slot is currently configured to use.
-  /// Returns (ecbRates, midMarketRates), both USD-relative dictionaries.
-  func fetchBothRates(
-    ecbProvider: RateProvider,
-    midMarketProvider: RateProvider
-  ) async throws -> ([String: Double], [String: Double]) {
-    async let ecbTask = fetch(from: ecbProvider)
-    async let midTask = fetch(from: midMarketProvider)
-
-    var ecb: [String: Double] = [:]
-    var mid: [String: Double] = [:]
-
-    do { ecb = try await ecbTask } catch { ecb = [:] }
-    do { mid = try await midTask } catch { mid = [:] }
-
-    // If one completely failed, use the other for both
-    if ecb.isEmpty && !mid.isEmpty { ecb = mid }
-    if mid.isEmpty && !ecb.isEmpty { mid = ecb }
-
-    // If both failed, throw so caller knows to fall back
-    if ecb.isEmpty && mid.isEmpty {
-      throw URLError(.notConnectedToInternet)
-    }
-
-    return (ecb, mid)
+  /// Fetches USD-relative rates from the selected provider.
+  func fetchRates(from provider: RateProvider) async throws -> [String: Double] {
+    let rates = try await fetch(from: provider)
+    if rates.isEmpty { throw URLError(.notConnectedToInternet) }
+    return rates
   }
 
   private func fetch(from provider: RateProvider) async throws -> [String: Double] {
