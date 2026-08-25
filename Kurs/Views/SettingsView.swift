@@ -13,8 +13,13 @@ struct SettingsView: View {
   @State private var localNumberLocaleID: String
   @State private var showRateSource = false
 
+  /// Appearance previews live as you tap, so Cancel needs the value the sheet
+  /// was opened with in order to put it back.
+  private let originalDarkMode: Bool?
+
   init(appState: AppState) {
     let dm = appState.isDarkMode
+    originalDarkMode = dm
     _localDarkMode = State(initialValue: dm == nil ? 0 : (dm! ? 2 : 1))
     _localOffline = State(initialValue: appState.isOffline)
     _localNumberLocaleID = State(initialValue: appState.numberLocaleID)
@@ -32,6 +37,12 @@ struct SettingsView: View {
           }
           .pickerStyle(.segmented)
           .padding(.vertical, 4)
+          // Applied on selection rather than on Save — waiting for Save made
+          // the switch feel broken, and the theme is the one setting you judge
+          // by looking at it.
+          .onChange(of: localDarkMode) { newValue in
+            appState.isDarkMode = Self.darkModeValue(for: newValue)
+          }
         } header: {
           Text("Appearance")
         }
@@ -74,7 +85,7 @@ struct SettingsView: View {
         } header: {
           Text("Rate Source")
         } footer: {
-          Text("Choose the plain market rate, a card/bank fee, or your own fixed rate.")
+          Text("Use the plain market rate, or add a card/bank fee on top.")
             .font(.caption)
         }
 
@@ -94,11 +105,10 @@ struct SettingsView: View {
                     .monospacedDigit()
                 }
                 Spacer()
-                if localNumberLocaleID == option.id {
-                  Image(systemName: "checkmark")
-                    .foregroundColor(.accentColor)
-                    .font(.system(size: 14, weight: .semibold))
-                }
+                Image(systemName: "checkmark")
+                  .foregroundColor(.accentColor)
+                  .font(.system(size: 14, weight: .semibold))
+                  .opacity(localNumberLocaleID == option.id ? 1 : 0)
               }
               .contentShape(Rectangle())
             }
@@ -137,18 +147,17 @@ struct SettingsView: View {
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .navigationBarLeading) {
-          Button("Cancel") { dismiss() }
+          Button("Cancel") {
+            appState.isDarkMode = originalDarkMode
+            dismiss()
+          }
         }
         ToolbarItem(placement: .navigationBarTrailing) {
           Button("Save") {
-            // Apply appearance
-            switch localDarkMode {
-            case 1: appState.isDarkMode = false
-            case 2: appState.isDarkMode = true
-            default: appState.isDarkMode = nil
-            }
-            appState.isOffline = localOffline
+            // Appearance is already applied by the picker's onChange; this
+            // just commits it along with everything else.
             appState.numberLocaleID = localNumberLocaleID
+            appState.setOffline(localOffline)
             appState.saveSettings()
             dismiss()
           }
@@ -158,7 +167,16 @@ struct SettingsView: View {
       .sheet(isPresented: $showRateSource) {
         RateSourceView(appState: appState)
           .environmentObject(appState)
+          .kursAppearance(appState.isDarkMode)
       }
+    }
+  }
+
+  private static func darkModeValue(for tag: Int) -> Bool? {
+    switch tag {
+    case 1: return false
+    case 2: return true
+    default: return nil  // follow system
     }
   }
 

@@ -33,11 +33,13 @@ struct DataSourcesView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 8)
-                if localProviderID == provider.rawValue {
-                  Image(systemName: "checkmark")
-                    .foregroundColor(.accentColor)
-                    .font(.system(size: 14, weight: .semibold))
-                }
+                // Kept in the layout at all times and only faded — showing it
+                // conditionally narrowed the text column, so the wrapped
+                // summary re-flowed every time the selection moved.
+                Image(systemName: "checkmark")
+                  .foregroundColor(.accentColor)
+                  .font(.system(size: 14, weight: .semibold))
+                  .opacity(localProviderID == provider.rawValue ? 1 : 0)
               }
               .contentShape(Rectangle())
             }

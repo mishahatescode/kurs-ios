@@ -6,15 +6,11 @@ struct RateSourceView: View {
   @EnvironmentObject var appState: AppState
   @Environment(\.dismiss) private var dismiss
   @State private var localMarkup: Double
-  @State private var localCustomRate: String
   @State private var localSource: RateSource
   @State private var showDataSources = false
 
-  @FocusState private var customRateFocused: Bool
-
   init(appState: AppState) {
     _localMarkup = State(initialValue: appState.bankMarkup)
-    _localCustomRate = State(initialValue: appState.customRate)
     _localSource = State(initialValue: appState.rateSource)
   }
 
@@ -43,11 +39,13 @@ struct RateSourceView: View {
 
                 Spacer()
 
-                if localSource == source {
-                  Image(systemName: "checkmark")
-                    .foregroundColor(.accentColor)
-                    .font(.system(size: 14, weight: .semibold))
-                }
+                // Always laid out, only faded in/out — a conditional checkmark
+                // changes the row's width and shoves the text sideways as the
+                // selection moves.
+                Image(systemName: "checkmark")
+                  .foregroundColor(.accentColor)
+                  .font(.system(size: 14, weight: .semibold))
+                  .opacity(localSource == source ? 1 : 0)
               }
               .contentShape(Rectangle())
             }
@@ -105,36 +103,6 @@ struct RateSourceView: View {
           }
         }
 
-        // MARK: Custom Rate
-        if localSource == .custom {
-          Section {
-            HStack(spacing: 8) {
-              Text("1 \(appState.sourceCurrency.code) =")
-                .foregroundColor(.secondary)
-                .font(.body)
-                .fixedSize()
-
-              TextField("Rate", text: $localCustomRate)
-                .keyboardType(.decimalPad)
-                .focused($customRateFocused)
-                .multilineTextAlignment(.trailing)
-                .font(.system(size: 17, weight: .medium, design: .rounded))
-
-              Text(appState.targetCurrency.code)
-                .foregroundColor(.secondary)
-                .font(.body)
-                .fixedSize()
-            }
-          } header: {
-            Text("Custom Rate")
-          } footer: {
-            Text(
-              "Enter a fixed rate for \(appState.sourceCurrency.code) → \(appState.targetCurrency.code). Leave empty to use the market rate."
-            )
-            .font(.caption)
-          }
-        }
-
         // MARK: Data Sources
         Section {
           Button {
@@ -169,19 +137,16 @@ struct RateSourceView: View {
           Button("Apply") {
             appState.rateSource = localSource
             appState.bankMarkup = localMarkup
-            appState.customRate = localCustomRate
-            appState.saveSettings()
+                    appState.saveSettings()
             dismiss()
           }
           .fontWeight(.semibold)
         }
       }
-      .onTapGesture {
-        customRateFocused = false
-      }
       .sheet(isPresented: $showDataSources) {
         DataSourcesView(appState: appState)
           .environmentObject(appState)
+          .kursAppearance(appState.isDarkMode)
       }
     }
   }

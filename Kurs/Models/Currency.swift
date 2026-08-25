@@ -30,13 +30,11 @@ struct Currency: Identifiable, Codable, Equatable, Hashable {
 enum RateSource: String, Codable, CaseIterable {
   case market = "Market"
   case card = "Card/Bank"
-  case custom = "Custom"
 
   var displayName: String {
     switch self {
     case .market: return "Market rate"
     case .card: return "Card or bank"
-    case .custom: return "Custom"
     }
   }
 
@@ -44,7 +42,6 @@ enum RateSource: String, Codable, CaseIterable {
     switch self {
     case .market: return "The plain rate from your data source — nothing added"
     case .card: return "Like paying with a card abroad — a small fee added on top"
-    case .custom: return "A number you type in yourself, like a rate someone told you"
     }
   }
 
@@ -52,7 +49,6 @@ enum RateSource: String, Codable, CaseIterable {
     switch self {
     case .market: return "chart.line.uptrend.xyaxis"
     case .card: return "creditcard"
-    case .custom: return "pencil"
     }
   }
 }

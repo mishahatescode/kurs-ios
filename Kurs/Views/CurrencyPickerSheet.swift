@@ -64,7 +64,10 @@ struct CurrencyPickerSheet: View {
       .navigationTitle(pickingForSource ? "From" : "To")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
-        ToolbarItem(placement: .navigationBarTrailing) {
+        // Cancel sits on the leading edge, per the HIG — the trailing slot is
+        // for the confirming action, and every other sheet in the app already
+        // puts Cancel on the left.
+        ToolbarItem(placement: .navigationBarLeading) {
           Button("Cancel") { dismiss() }
         }
       }

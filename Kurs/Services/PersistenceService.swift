@@ -15,7 +15,7 @@ final class PersistenceService {
     static let cacheDate = "kurs.cacheDate"
     static let rateSource = "kurs.rateSource"
     static let bankMarkup = "kurs.bankMarkup"
-    static let customRate = "kurs.customRate"
+    static let offline = "kurs.offline"
     static let numberLocale = "kurs.numberLocale"
     static let provider = "kurs.provider"
     static let darkMode = "kurs.darkMode"
@@ -103,14 +103,15 @@ final class PersistenceService {
     return val == 0 && !defaults.bool(forKey: "kurs.bankMarkupSet") ? 2.5 : val
   }
 
-  // MARK: - Custom Rate
+  // MARK: - Offline Mode
 
-  func saveCustomRate(_ rate: String) {
-    defaults.set(rate, forKey: Key.customRate)
+  func saveOffline(_ offline: Bool) {
+    defaults.set(offline, forKey: Key.offline)
   }
 
-  func loadCustomRate() -> String {
-    defaults.string(forKey: Key.customRate) ?? ""
+  /// Absent key reads as `false`, which is the intended default (online).
+  func loadOffline() -> Bool {
+    defaults.bool(forKey: Key.offline)
   }
 
   // MARK: - Number Locale

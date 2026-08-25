@@ -51,7 +51,6 @@ final class AppState: ObservableObject {
   // MARK: - Rate Source & Settings
   @Published var rateSource: RateSource = .market
   @Published var bankMarkup: Double = 2.5  // percent
-  @Published var customRate: String = ""  // raw input
   @Published var numberLocaleID: String = "en-US"
 
   var numberLocale: Locale { Locale(identifier: numberLocaleID) }
@@ -131,18 +130,6 @@ final class AppState: ObservableObject {
       // every conversion — either direction — comes out behind the mid
       // rate, so a round trip loses ~2×markup instead of gaining any.
       return base * (1 - bankMarkup / 100)
-    case .custom:
-      let cv = Double(customRate.replacingOccurrences(of: ",", with: ".")) ?? 0
-      if cv > 0 {
-        // custom rate is interpreted as: 1 unit of sourceCurrency = cv units of targetCurrency
-        // Only apply when converting exactly the active pair; otherwise fall back
-        if from.code == sourceCurrency.code && to.code == targetCurrency.code {
-          return cv
-        } else if from.code == targetCurrency.code && to.code == sourceCurrency.code {
-          return 1.0 / cv
-        }
-      }
-      return base
     }
   }
 
@@ -157,7 +144,6 @@ final class AppState: ObservableObject {
     switch rateSource {
     case .market: sourceLabel = provider.displayName
     case .card: sourceLabel = "Card or bank"
-    case .custom: sourceLabel = "Custom"
     }
     return "1 \(sourceCurrency.code) = \(formattedRate) \(targetCurrency.code) · \(sourceLabel)"
   }
@@ -300,6 +286,24 @@ final class AppState: ObservableObject {
     isLoading = false
   }
 
+  // MARK: - Offline Mode
+
+  /// Flipping the switch has to change what's on screen straight away. The
+  /// offline/stale signal is driven by `loadError`, which otherwise wouldn't
+  /// be set until the next refresh attempt — so the toggle looked inert until
+  /// you happened to pull-to-refresh.
+  func setOffline(_ offline: Bool) {
+    isOffline = offline
+    persistence.saveOffline(offline)
+    if offline {
+      isLoading = false
+      loadError = "Offline — showing cached rates"
+    } else {
+      loadError = nil
+      Task { await refreshRates() }
+    }
+  }
+
   // MARK: - Pinned Currencies
 
   func isPinned(_ code: String) -> Bool { pinnedCurrencies.contains(code) }
@@ -383,7 +387,7 @@ final class AppState: ObservableObject {
     }
     if let src = p.loadRateSource() { rateSource = src }
     bankMarkup = p.loadBankMarkup()
-    customRate = p.loadCustomRate()
+    isOffline = p.loadOffline()
     if let loc = p.loadNumberLocale() { numberLocaleID = loc }
     if let pID = p.loadProvider() { providerID = pID }
     isDarkMode = p.loadDarkMode()
@@ -398,7 +402,7 @@ final class AppState: ObservableObject {
   func saveSettings() {
     persistence.saveRateSource(rateSource)
     persistence.saveBankMarkup(bankMarkup)
-    persistence.saveCustomRate(customRate)
+    persistence.saveOffline(isOffline)
     persistence.saveNumberLocale(numberLocaleID)
     persistence.saveProvider(providerID)
     persistence.saveDarkMode(isDarkMode)

@@ -10,14 +10,15 @@ struct ContentView: View {
       mainContent
       toastOverlay
     }
-    .preferredColorScheme(appState.isDarkMode.map { $0 ? .dark : .light })
     .sheet(isPresented: $appState.showCurrencyPicker) {
       CurrencyPickerSheet(pickingForSource: appState.pickingForSource)
         .environmentObject(appState)
+        .kursAppearance(appState.isDarkMode)
     }
     .sheet(isPresented: $appState.showSettings) {
       SettingsView(appState: appState)
         .environmentObject(appState)
+        .kursAppearance(appState.isDarkMode)
     }
   }
 
