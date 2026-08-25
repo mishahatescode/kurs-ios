@@ -2,14 +2,22 @@
 
 Release notes for **Kurs**, the iOS currency converter.
 
-Repository — https://github.com/mishahatescode/kurs-ios
+Repository — https://github.com/mishahatescode/kurs-ios  
 Active branch `polish-recent-pairs-and-fixes` — https://github.com/mishahatescode/kurs-ios/tree/polish-recent-pairs-and-fixes
 
 `main` still holds only the initial commit; all work below is on the branch above.
 
-## Unreleased — 2026-08-25
+Mirrors the **Kurs — Changelog** list in Anytype — one page per entry there, one
+section per entry here. Update both together.
 
-Commit `59a0aa1` — https://github.com/mishahatescode/kurs-ios/commit/59a0aa1
+---
+
+## 2026-08-25 — Appearance, offline mode, custom rate
+
+`59a0aa1` — https://github.com/mishahatescode/kurs-ios/commit/59a0aa1
+`a6f3558` — https://github.com/mishahatescode/kurs-ios/commit/a6f3558
+
+Branch `polish-recent-pairs-and-fixes` — https://github.com/mishahatescode/kurs-ios/tree/polish-recent-pairs-and-fixes
 
 Five fixes from a round of device testing. All verified running on an iPhone 16e
 simulator, not merely compiled.
@@ -26,42 +34,97 @@ to the window root and is re-applied to each of the four sheets.
 
 **Cancel moved to the leading edge in the currency picker.**
 Per Apple's HIG the trailing slot belongs to the confirming action. The app's
-other three sheets already put Cancel on the left, so the picker was the sole
-outlier.
+other three sheets already put Cancel on the left.
 
 **Data-source rows no longer re-wrap when the selection changes.**
 The checkmark was rendered conditionally, so it occupied zero width when
-unselected. Showing it narrowed the text column and re-flowed the wrapped summary
-text. It is now always in the layout and only fades between opacity 0 and 1. The
-identical defect was fixed in Rate Source and in the Formatting list.
+unselected. Showing it narrowed the text column and re-flowed the wrapped
+summary. It is now always in the layout and only fades between opacity 0 and 1.
+Same defect fixed in Rate Source and Formatting.
 
 **Custom rate removed.**
-Dropped the `RateSource.custom` enum case, the text-field section, the conversion
-branch, and the `kurs.customRate` persistence key. A previously saved `"Custom"`
-raw value decodes to nil and falls back to Market rate, so existing installs
-degrade cleanly rather than crashing.
+Dropped the `RateSource.custom` case, the text-field section, the conversion
+branch and the `kurs.customRate` key. A previously saved `"Custom"` value decodes
+to nil and falls back to Market rate, so existing installs degrade cleanly.
 
 **Offline mode works.**
-Two separate bugs. The flag was never persisted — no key, no save, no load — so
-it silently reset on every launch. And toggling it changed nothing on screen,
-because the offline signal is driven by `loadError`, which was not set until the
-next refresh attempt; the switch looked inert unless you happened to
-pull-to-refresh. Both are handled in a new `setOffline()`, which also kicks off a
-refresh when you switch back online.
+Two bugs. The flag was never persisted, so it reset every launch. And toggling it
+changed nothing on screen, because the offline signal is driven by `loadError`,
+which was not set until the next refresh attempt. Both handled in a new
+`setOffline()`, which also refreshes when you switch back online.
 
 ### Scope
 
-9 files changed, +97 / −91.
-
-`ContentView` · `KursApp` · `AppState` · `Currency` · `PersistenceService` ·
-`CurrencyPickerSheet` · `DataSourcesView` · `RateSourceView` · `SettingsView`
+9 files, +97 / −91. Plus `CHANGELOG.md` added.
 
 ### Known, not addressed
 
 The converter still allows the same currency on both sides (EUR → EUR).
-`recordCurrentPair()` correctly refuses to save such a pair, so this is a
-display-only quirk — but the picker does not prevent choosing it.
+`recordCurrentPair()` refuses to save such a pair, so it is display-only.
 
-## 339c584 — initial commit
+---
 
-Kurs iOS currency converter — SwiftUI, iOS 16+, no third-party dependencies.
+## 2026-08-24 — One data source, pinned currencies
+
+`7a659be` — https://github.com/mishahatescode/kurs-ios/commit/7a659be
+
+Collapsed the rate model to a single data source, added pinned currencies to the
+picker, and dropped the refresh setting.
+
+### Scope
+
+9 files, +184 / −301 — a net simplification.
+
+*Summarised from the commit; this entry predates changelog-keeping.*
+
+---
+
+## 2026-08-03 — Editable Data Sources screen
+
+`d7dbf9e` — https://github.com/mishahatescode/kurs-ios/commit/d7dbf9e
+
+Added an editable Data Sources screen, rewrote the source descriptions in plain
+language, and made the currency count reflect what the chosen source actually
+covers rather than the app's fixed total.
+
+### Scope
+
+7 files, +334 / −70. `DataSourcesView.swift` added.
+
+*Summarised from the commit; this entry predates changelog-keeping.*
+
+---
+
+## 2026-07-28 — Loading state, offline signal, number formatting
+
+`a0577e5` — https://github.com/mishahatescode/kurs-ios/commit/a0577e5
+`3dc836d` — https://github.com/mishahatescode/kurs-ios/commit/3dc836d
+
+Added a launch loading state, unified the offline/stale signal into one code
+path, and moved Rate Source into Settings. Then restored live number-grouping
+with a locale picker and relocated the Exchange Rates info.
+
+### Scope
+
+4 files, +75 / −40, then 5 files, +132 / −12.
+
+*Summarised from the commits; this entry predates changelog-keeping.*
+
+---
+
+## 2026-07-27 — Initial build
+
+`339c584` — https://github.com/mishahatescode/kurs-ios/commit/339c584
+`afb1da1` — https://github.com/mishahatescode/kurs-ios/commit/afb1da1
+
+First commit of the Kurs iOS currency converter — SwiftUI, iOS 16+, no
+third-party dependencies. Followed same-day by a pass fixing project and rate
+bugs, matching the prototype UI, adding recent pairs, and formatting the code.
+
+### Scope
+
+17 files, +2280 at the initial commit; then 14 files, +1584 / −1572.
+
+*Summarised from the commits; this entry predates changelog-keeping.*
+
+---
