@@ -2,8 +2,8 @@
 
 Release notes for **Kurs**, the iOS currency converter.
 
-Repository — https://github.com/mishahatescode/kurs-ios  
-Active branch `polish-recent-pairs-and-fixes` — https://github.com/mishahatescode/kurs-ios/tree/polish-recent-pairs-and-fixes
+Repository — [mishahatescode/kurs-ios](https://github.com/mishahatescode/kurs-ios)  
+Active branch — [polish-recent-pairs-and-fixes](https://github.com/mishahatescode/kurs-ios/tree/polish-recent-pairs-and-fixes)
 
 `main` still holds only the initial commit; all work below is on the branch above.
 
@@ -14,10 +14,9 @@ section per entry here. Update both together.
 
 ## 2026-08-25 — Appearance, offline mode, custom rate
 
-`59a0aa1` — https://github.com/mishahatescode/kurs-ios/commit/59a0aa1
-`a6f3558` — https://github.com/mishahatescode/kurs-ios/commit/a6f3558
+Commit [59a0aa1](https://github.com/mishahatescode/kurs-ios/commit/59a0aa1) · Commit [a6f3558](https://github.com/mishahatescode/kurs-ios/commit/a6f3558)
 
-Branch `polish-recent-pairs-and-fixes` — https://github.com/mishahatescode/kurs-ios/tree/polish-recent-pairs-and-fixes
+Branch [polish-recent-pairs-and-fixes](https://github.com/mishahatescode/kurs-ios/tree/polish-recent-pairs-and-fixes)
 
 Five fixes from a round of device testing. All verified running on an iPhone 16e
 simulator, not merely compiled.
@@ -66,7 +65,7 @@ The converter still allows the same currency on both sides (EUR → EUR).
 
 ## 2026-08-24 — One data source, pinned currencies
 
-`7a659be` — https://github.com/mishahatescode/kurs-ios/commit/7a659be
+Commit [7a659be](https://github.com/mishahatescode/kurs-ios/commit/7a659be)
 
 Collapsed the rate model to a single data source, added pinned currencies to the
 picker, and dropped the refresh setting.
@@ -81,7 +80,7 @@ picker, and dropped the refresh setting.
 
 ## 2026-08-03 — Editable Data Sources screen
 
-`d7dbf9e` — https://github.com/mishahatescode/kurs-ios/commit/d7dbf9e
+Commit [d7dbf9e](https://github.com/mishahatescode/kurs-ios/commit/d7dbf9e)
 
 Added an editable Data Sources screen, rewrote the source descriptions in plain
 language, and made the currency count reflect what the chosen source actually
@@ -97,8 +96,7 @@ covers rather than the app's fixed total.
 
 ## 2026-07-28 — Loading state, offline signal, number formatting
 
-`a0577e5` — https://github.com/mishahatescode/kurs-ios/commit/a0577e5
-`3dc836d` — https://github.com/mishahatescode/kurs-ios/commit/3dc836d
+Commit [a0577e5](https://github.com/mishahatescode/kurs-ios/commit/a0577e5) · Commit [3dc836d](https://github.com/mishahatescode/kurs-ios/commit/3dc836d)
 
 Added a launch loading state, unified the offline/stale signal into one code
 path, and moved Rate Source into Settings. Then restored live number-grouping
@@ -114,8 +112,7 @@ with a locale picker and relocated the Exchange Rates info.
 
 ## 2026-07-27 — Initial build
 
-`339c584` — https://github.com/mishahatescode/kurs-ios/commit/339c584
-`afb1da1` — https://github.com/mishahatescode/kurs-ios/commit/afb1da1
+Commit [339c584](https://github.com/mishahatescode/kurs-ios/commit/339c584) · Commit [afb1da1](https://github.com/mishahatescode/kurs-ios/commit/afb1da1)
 
 First commit of the Kurs iOS currency converter — SwiftUI, iOS 16+, no
 third-party dependencies. Followed same-day by a pass fixing project and rate
